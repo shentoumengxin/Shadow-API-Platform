@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m venv venv)",
+      "Bash(git init:*)",
+      "Bash(git -C /home/XXBAi/HKUST/router config user.email && git -C /home/XXBAi/HKUST/router config user.name)",
+      "Bash(git -C /home/XXBAi/HKUST/router add . && git -C /home/XXBAi/HKUST/router commit -m \"$\\(cat <<'EOF'\nInitial project setup\n\n- Python 3.10 project with pyproject.toml\n- Virtual environment\n- src layout for router package\nEOF\n\\)\")"
+    ]
+  }
+}
