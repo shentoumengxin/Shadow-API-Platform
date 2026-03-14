@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Research Proxy - 监控面板</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1a;
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .header h1 { color: #00d9ff; font-size: 1.5em; }
+        .header p { color: #888; margin-top: 5px; }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .status-item {
+            background: #0f0f1a;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .status-label { color: #888; font-size: 0.85em; }
+        .status-value { font-weight: bold; margin-top: 3px; }
+        .status-value.ok { color: #00ff88; }
+        .status-value.error { color: #ff4466; }
+        .status-value.warn { color: #ffaa00; }
+
+        /* Config Section */
+        .config-panel {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .config-panel h3 { color: #00d9ff; margin-bottom: 15px; }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .config-item label {
+            display: block;
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        .config-item input, .config-item select {
+            width: 100%;
+            padding: 10px;
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #eee;
+            font-family: inherit;
+        }
+        .config-item input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+        .btn {
+            background: #00d9ff;
+            color: #0f0f1a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #00b8d9; }
+        .btn.danger { background: #ff4466; color: white; }
+        .btn.danger:hover { background: #ff2244; }
+        .btn.secondary { background: #333; color: #eee; }
+        .btn.secondary:hover { background: #444; }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 1000px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Panel */
+        .panel {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+        .panel h2 {
+            color: #00d9ff;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th { color: #888; font-weight: normal; font-size: 0.9em; }
+        tr:hover { background: #1a1a2e; cursor: pointer; }
+        .trace-id { font-family: monospace; color: #00d9ff; font-size: 0.9em; }
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .badge.openai { background: #2d5016; color: #88ff88; }
+        .badge.anthropic { background: #4a2d50; color: #d988ff; }
+        .badge.error { background: #501620; color: #ff8888; }
+
+        /* Detail View */
+        .detail-view {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .detail-section { margin-bottom: 20px; }
+        .detail-section h4 {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .detail-content {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .json-key { color: #00d9ff; }
+        .json-string { color: #88ff88; }
+        .json-number { color: #ffaa00; }
+        .json-boolean { color: #ff4466; }
+
+        /* Test Form */
+        .test-form .form-group {
+            margin-bottom: 15px;
+        }
+        .test-form label {
+            display: block;
+            color: #888;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .test-form input, .test-form select, .test-form textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #eee;
+            font-family: inherit;
+        }
+        .test-form textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .test-form input:focus, .test-form textarea:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        /* Result Box */
+        .result-box {
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-box.success { border-left: 4px solid #00ff88; }
+        .result-box.error { border-left: 4px solid #ff4466; }
+
+        /* Rules */
+        .rule-card {
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .rule-id { color: #00d9ff; font-family: monospace; }
+        .rule-status { font-size: 0.85em; }
+        .rule-status.enabled { color: #00ff88; }
+        .rule-status.disabled { color: #ff4466; }
+        .rule-desc { color: #ccc; margin-bottom: 10px; }
+        .rule-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab:hover { background: #1a1a2e; }
+        .tab.active {
+            background: #00d9ff;
+            color: #0f0f1a;
+            border-color: #00d9ff;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Interception Panel */
+        .intercept-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .intercept-panel {
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .intercept-panel h4 {
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .intercept-content {
+            font-family: monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-top-color: #00d9ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>🔬 LLM Research Proxy</h1>
+                <p>轻量级 LLM API 代理监控面板</p>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-label">状态</div>
+                    <div class="status-value" id="statusHealth">检查中...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">提供者</div>
+                    <div class="status-value" id="statusProviders">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Dry Run</div>
+                    <div class="status-value" id="statusDryRun">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Configuration -->
+        <div class="config-panel">
+            <h3>📡 API 配置</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Proxy API 地址</label>
+                    <input type="text" id="configProxyUrl" value="http://localhost:8765">
+                </div>
+                <div class="config-item">
+                    <label>自定义监控端口 (可选)</label>
+                    <input type="text" id="configMonitorPort" placeholder="如：9000 - 留空则使用 Proxy API 地址">
+                </div>
+                <div class="config-item">
+                    <label>&nbsp;</label>
+                    <button class="btn" onclick="saveConfig()">💾 保存配置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" data-tab="traces">📊 Traces</div>
+            <div class="tab" data-tab="intercept">🎯 拦截监控</div>
+            <div class="tab" data-tab="test">🧪 测试请求</div>
+            <div class="tab" data-tab="rules">⚙️ 规则配置</div>
+        </div>
+
+        <!-- Traces Tab -->
+        <div class="tab-content active" id="tab-traces">
+            <div class="main-grid">
+                <div class="panel">
+                    <h2>
+                        Recent Traces
+                        <span style="font-size: 0.8em;">
+                            <button class="btn secondary" onclick="loadTraces()">↻ 刷新</button>
+                            <button class="btn danger" onclick="clearTraces()">🗑 清空</button>
+                        </span>
+                    </h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Trace ID</th>
+                                <th>Provider</th>
+                                <th>Model</th>
+                                <th>耗时</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tracesTable">
+                            <tr><td colspan="5" style="text-align:center;color:#888;">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="panel">
+                    <h2>Trace 详情</h2>
+                    <div id="traceDetail">
+                        <p style="color:#888;text-align:center;margin-top:50px;">选择一个 trace 查看详情</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intercept Tab -->
+        <div class="tab-content" id="tab-intercept">
+            <div class="panel">
+                <h2>🎯 实时拦截监控</h2>
+                <p style="color:#888;margin-bottom:20px;">
+                    点击"开始监控"后，面板将自动刷新显示最近的请求和响应修改情况。
+                </p>
+                <div style="margin-bottom:15px;">
+                    <button class="btn" onclick="startInterceptMonitor()">▶ 开始监控</button>
+                    <button class="btn secondary" onclick="stopInterceptMonitor()">⏹ 停止</button>
+                    <button class="btn secondary" onclick="loadTraces()">🔄 手动刷新</button>
+                </div>
+                <div class="intercept-grid" id="interceptDisplay">
+                    <div class="intercept-panel">
+                        <h4>📥 原始请求</h4>
+                        <div class="intercept-content" id="interceptRawReq" style="color:#888;">等待监控...</div>
+                    </div>
+                    <div class="intercept-panel">
+                        <h4>📤 修改后请求</h4>
+                        <div class="intercept-content" id="interceptModReq" style="color:#888;">等待监控...</div>
+                    </div>
+                </div>
+                <div class="intercept-grid" style="margin-top:15px;">
+                    <div class="intercept-panel">
+                        <h4>📥 上游响应</h4>
+                        <div class="intercept-content" id="interceptRawResp" style="color:#888;">等待监控...</div>
+                    </div>
+                    <div class="intercept-panel">
+                        <h4>📤 修改后响应</h4>
+                        <div class="intercept-content" id="interceptModResp" style="color:#888;">等待监控...</div>
+                    </div>
+                </div>
+                <div class="detail-section" style="margin-top:15px;">
+                    <h4>⚙️ 命中规则</h4>
+                    <div class="intercept-content" id="interceptRules" style="color:#888;max-height:150px;">等待监控...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Tab -->
+        <div class="tab-content" id="tab-test">
+            <div class="main-grid">
+                <div class="panel">
+                    <h2>🧪 发送测试请求</h2>
+                    <form class="test-form" id="testForm">
+                        <div class="form-group">
+                            <label>Provider</label>
+                            <select id="testProvider" required>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>模型名称</label>
+                            <input type="text" id="testModel" placeholder="如：gpt-3.5-turbo 或 claude-3-haiku-20240307" required>
+                        </div>
+                        <div class="form-group">
+                            <label>System Prompt (可选)</label>
+                            <textarea id="testSystem" placeholder="You are a helpful assistant..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>用户消息</label>
+                            <textarea id="testMessage" placeholder="输入要发送的消息..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">🚀 发送请求</button>
+                    </form>
+                </div>
+                <div class="panel">
+                    <h2>响应结果</h2>
+                    <div id="testResult" class="result-box" style="color:#888;">
+                        响应将显示在这里...
+                    </div>
+                    <div style="margin-top:15px;">
+                        <label style="color:#888;font-size:0.85em;">Trace ID: <span id="testTraceId" style="color:#00d9ff;">-</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rules Tab -->
+        <div class="tab-content" id="tab-rules">
+            <div class="panel">
+                <h2>
+                    ⚙️ 当前规则
+                    <button class="btn secondary" onclick="loadRules()">↻ 刷新</button>
+                </h2>
+                <div id="rulesList" style="margin-top:15px;">
+                    <p style="color:#888;text-align:center;">加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // Configuration
+        // =============================================
+        let PROXY_URL = localStorage.getItem('proxyUrl') || 'http://localhost:8765';
+        let monitorInterval = null;
+        let selectedTraceId = null;
+
+        // Load saved config
+        document.getElementById('configProxyUrl').value = PROXY_URL;
+        const savedMonitorPort = localStorage.getItem('monitorPort');
+        if (savedMonitorPort) {
+            document.getElementById('configMonitorPort').value = savedMonitorPort;
+        }
+
+        function saveConfig() {
+            PROXY_URL = document.getElementById('configProxyUrl').value.replace(/\/$/, '');
+            localStorage.setItem('proxyUrl', PROXY_URL);
+
+            const monitorPort = document.getElementById('configMonitorPort').value.trim();
+            if (monitorPort) {
+                localStorage.setItem('monitorPort', monitorPort);
+            } else {
+                localStorage.removeItem('monitorPort');
+            }
+
+            alert('配置已保存！');
+            checkHealth();
+        }
+
+        // =============================================
+        // Tab Switching
+        // =============================================
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // =============================================
+        // Health Check
+        // =============================================
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${PROXY_URL}/health`);
+                const data = await res.json();
+
+                document.getElementById('statusHealth').textContent = '● 在线';
+                document.getElementById('statusHealth').className = 'status-value ok';
+                document.getElementById('statusProviders').textContent = data.providers_available.join(', ') || '无';
+                document.getElementById('statusDryRun').textContent = data.dry_run ? '开启' : '关闭';
+                document.getElementById('statusDryRun').className = data.dry_run ? 'status-value warn' : 'status-value ok';
+            } catch (e) {
+                document.getElementById('statusHealth').textContent = '● 离线';
+                document.getElementById('statusHealth').className = 'status-value error';
+                document.getElementById('statusProviders').textContent = '-';
+                document.getElementById('statusDryRun').textContent = '-';
+            }
+        }
+
+        // =============================================
+        // Traces
+        // =============================================
+        async function loadTraces() {
+            try {
+                const res = await fetch(`${PROXY_URL}/traces?limit=50`);
+                const traces = await res.json();
+
+                const tbody = document.getElementById('tracesTable');
+                if (traces.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">暂无 traces</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = traces.map(t => `
+                    <tr onclick="viewTrace('${t.trace_id}')">
+                        <td class="trace-id">${t.trace_id}</td>
+                        <td><span class="badge ${t.provider}">${t.provider}</span></td>
+                        <td>${t.model}</td>
+                        <td>${t.duration_ms || '-'}ms</td>
+                        <td>${t.has_error ? '<span class="badge error">Error</span>' : '<span class="badge" style="background:#16502d;color:#88ff88;">OK</span>'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('tracesTable').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff4466;">加载失败：${e.message}</td></tr>`;
+            }
+        }
+
+        async function viewTrace(traceId) {
+            selectedTraceId = traceId;
+            try {
+                const res = await fetch(`${PROXY_URL}/traces/${traceId}`);
+                const trace = await res.json();
+
+                document.getElementById('traceDetail').innerHTML = `
+                    <div class="detail-view">
+                        <div class="detail-section">
+                            <h4>基本信息</h4>
+                            <div class="detail-content">${JSON.stringify({
+                                trace_id: trace.trace_id,
+                                provider: trace.provider,
+                                model: trace.model,
+                                endpoint: trace.endpoint,
+                                duration_ms: trace.duration_ms,
+                                error: trace.error
+                            }, null, 2)}</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>📥 原始请求</h4>
+                            <div class="detail-content">${JSON.stringify(trace.request.raw, null, 2)}</div>
+                        </div>
+                        ${trace.request.modified ? `
+                        <div class="detail-section">
+                            <h4>📤 修改后请求</h4>
+                            <div class="detail-content">${JSON.stringify(trace.request.modified, null, 2)}</div>
+                        </div>
+                        ` : ''}
+                        ${trace.request.rule_results && trace.request.rule_results.matched_rules.length > 0 ? `
+                        <div class="detail-section">
+                            <h4>⚙️ 命中规则 (请求)</h4>
+                            <div class="detail-content">${JSON.stringify(trace.request.rule_results.matched_rules, null, 2)}</div>
+                        </div>
+                        ` : ''}
+                        ${trace.response ? `
+                        <div class="detail-section">
+                            <h4>📥 上游响应</h4>
+                            <div class="detail-content">${JSON.stringify(trace.response.raw, null, 2)}</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>📤 修改后响应</h4>
+                            <div class="detail-content">${JSON.stringify(trace.response.modified, null, 2)}</div>
+                        </div>
+                        ` : ''}
+                        ${trace.response && trace.response.rule_results && trace.response.rule_results.matched_rules.length > 0 ? `
+                        <div class="detail-section">
+                            <h4>⚙️ 命中规则 (响应)</h4>
+                            <div class="detail-content">${JSON.stringify(trace.response.rule_results.matched_rules, null, 2)}</div>
+                        </div>
+                        ` : ''}
+                        <div style="margin-top:15px;">
+                            <button class="btn" onclick="replayTrace('${traceId}')">▶ 重放此请求</button>
+                            <button class="btn secondary" onclick="replayTraceModified('${traceId}')">▶ 重放 (使用修改后的请求)</button>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                document.getElementById('traceDetail').innerHTML = `<p style="color:#ff4466;">加载失败：${e.message}</p>`;
+            }
+        }
+
+        async function clearTraces() {
+            if (!confirm('确定要清空所有 traces 吗？此操作不可恢复。')) return;
+            try {
+                await fetch(`${PROXY_URL}/traces`, { method: 'DELETE' });
+                loadTraces();
+            } catch (e) {
+                alert(`清空失败：${e.message}`);
+            }
+        }
+
+        async function replayTrace(traceId, useModified = false) {
+            try {
+                const res = await fetch(`${PROXY_URL}/replay/${traceId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ use_modified_request: useModified })
+                });
+                const result = await res.json();
+                alert(`重放完成!\n新 Trace ID: ${result.new_trace_id}`);
+                loadTraces();
+            } catch (e) {
+                alert(`重放失败：${e.message}`);
+            }
+        }
+
+        function replayTraceModified(traceId) {
+            replayTrace(traceId, true);
+        }
+
+        // =============================================
+        // Intercept Monitor
+        // =============================================
+        function startInterceptMonitor() {
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+            }
+            loadLatestIntercept();
+            monitorInterval = setInterval(loadLatestIntercept, 3000);
+        }
+
+        function stopInterceptMonitor() {
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+                monitorInterval = null;
+            }
+        }
+
+        async function loadLatestIntercept() {
+            try {
+                const res = await fetch(`${PROXY_URL}/traces?limit=1`);
+                const traces = await res.json();
+
+                if (traces.length === 0) {
+                    document.getElementById('interceptRawReq').textContent = '暂无数据';
+                    document.getElementById('interceptModReq').textContent = '暂无数据';
+                    document.getElementById('interceptRawResp').textContent = '暂无数据';
+                    document.getElementById('interceptModResp').textContent = '暂无数据';
+                    document.getElementById('interceptRules').textContent = '暂无数据';
+                    return;
+                }
+
+                const trace = await fetch(`${PROXY_URL}/traces/${traces[0].trace_id}`).then(r => r.json());
+
+                document.getElementById('interceptRawReq').textContent = JSON.stringify(trace.request.raw, null, 2);
+                document.getElementById('interceptModReq').textContent = trace.request.modified
+                    ? JSON.stringify(trace.request.modified, null, 2)
+                    : '(未修改)';
+                document.getElementById('interceptRawResp').textContent = trace.response && trace.response.raw
+                    ? JSON.stringify(trace.response.raw, null, 2)
+                    : '(无响应)';
+                document.getElementById('interceptModResp').textContent = trace.response && trace.response.modified
+                    ? JSON.stringify(trace.response.modified, null, 2)
+                    : '(未修改)';
+
+                const allRules = [
+                    ...(trace.request.rule_results?.matched_rules || []),
+                    ...(trace.response?.rule_results?.matched_rules || [])
+                ];
+                document.getElementById('interceptRules').textContent = allRules.length > 0
+                    ? JSON.stringify(allRules, null, 2)
+                    : '(未命中任何规则)';
+            } catch (e) {
+                console.error('Monitor error:', e);
+            }
+        }
+
+        // =============================================
+        // Test Request
+        // =============================================
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const provider = document.getElementById('testProvider').value;
+            const model = document.getElementById('testModel').value;
+            const system = document.getElementById('testSystem').value;
+            const message = document.getElementById('testMessage').value;
+            const resultBox = document.getElementById('testResult');
+            const traceIdEl = document.getElementById('testTraceId');
+
+            resultBox.textContent = '发送中...';
+            resultBox.className = 'result-box';
+
+            try {
+                const payload = {
+                    model: model,
+                    messages: [
+                        ...(system ? [{ role: 'system', content: system }] : []),
+                        { role: 'user', content: message }
+                    ]
+                };
+
+                const endpoint = provider === 'anthropic'
+                    ? `${PROXY_URL}/v1/messages`
+                    : `${PROXY_URL}/v1/chat/completions`;
+
+                const headers = { 'Content-Type': 'application/json' };
+                if (provider === 'anthropic') {
+                    headers['x-api-key'] = 'placeholder';
+                }
+
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                const traceId = res.headers.get('X-Research-Trace-Id');
+
+                resultBox.textContent = JSON.stringify(data, null, 2);
+                resultBox.className = 'result-box success';
+                traceIdEl.textContent = traceId || 'N/A';
+
+                loadTraces();
+            } catch (e) {
+                resultBox.textContent = `错误：${e.message}`;
+                resultBox.className = 'result-box error';
+                traceIdEl.textContent = '-';
+            }
+        });
+
+        // =============================================
+        // Rules
+        // =============================================
+        async function loadRules() {
+            try {
+                const res = await fetch(`${PROXY_URL}/rules`);
+                const data = await res.json();
+
+                const allRules = [
+                    ...data.rules.request.map(r => ({ ...r, scope: 'request' })),
+                    ...data.rules.response.map(r => ({ ...r, scope: 'response' })),
+                    ...data.rules.passive.map(r => ({ ...r, scope: 'passive' }))
+                ];
+
+                const rulesList = document.getElementById('rulesList');
+                if (allRules.length === 0) {
+                    rulesList.innerHTML = '<p style="color:#888;text-align:center;">暂无规则</p>';
+                    return;
+                }
+
+                rulesList.innerHTML = allRules.map(rule => `
+                    <div class="rule-card">
+                        <div class="rule-header">
+                            <span class="rule-id">${rule.id}</span>
+                            <span class="rule-status ${rule.enabled ? 'enabled' : 'disabled'}">
+                                ${rule.enabled ? '● 已启用' : '○ 已禁用'}
+                            </span>
+                        </div>
+                        <div class="rule-desc">${rule.description}</div>
+                        <div class="rule-meta">
+                            <span>范围：${rule.scope}</span>
+                            <span>优先级：${rule.priority}</span>
+                            <span>匹配：${JSON.stringify(rule.match)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('rulesList').innerHTML = `<p style="color:#ff4466;">加载失败：${e.message}</p>`;
+            }
+        }
+
+        // =============================================
+        // Initialize
+        // =============================================
+        checkHealth();
+        loadTraces();
+        loadRules();
+
+        // Auto-refresh health every 30 seconds
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html>
