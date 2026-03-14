@@ -28,6 +28,11 @@ class OpenAIAdapter(BaseAdapter):
 
     def normalize_to_canonical(self, raw_request: Dict[str, Any]) -> CanonicalRequest:
         """Convert OpenAI request to canonical format."""
+        # Ensure raw_request is a plain dict (not Pydantic model)
+        # This prevents serialization issues later
+        if hasattr(raw_request, 'model_dump'):
+            raw_request = raw_request.model_dump(mode="json", exclude_none=True)
+
         # Parse using Pydantic model
         request = OpenAIChatRequest(**raw_request)
 
@@ -36,7 +41,20 @@ class OpenAIAdapter(BaseAdapter):
         messages = []
         for msg in request.messages:
             if msg.role == "system":
-                system = msg.content if isinstance(msg.content, str) else None
+                # Handle content that may be ContentBlock list
+                if isinstance(msg.content, str):
+                    system = msg.content
+                elif isinstance(msg.content, list):
+                    # Extract text from ContentBlock objects
+                    texts = []
+                    for block in msg.content:
+                        if hasattr(block, 'text') and block.text:
+                            texts.append(block.text)
+                        elif isinstance(block, dict) and block.get('text'):
+                            texts.append(block['text'])
+                    system = "\n".join(texts)
+                else:
+                    system = None
             else:
                 messages.append(msg)
 
@@ -65,11 +83,32 @@ class OpenAIAdapter(BaseAdapter):
 
         # Add system message first if present
         if canonical_request.system:
-            messages.append({"role": "system", "content": canonical_request.system})
+            system_content = canonical_request.system
+            if isinstance(system_content, list):
+                # Extract text from ContentBlock objects
+                texts = []
+                for block in system_content:
+                    if hasattr(block, 'text') and block.text:
+                        texts.append(block.text)
+                    elif isinstance(block, dict) and block.get('text'):
+                        texts.append(block['text'])
+                system_content = "\n".join(texts)
+            messages.append({"role": "system", "content": system_content})
 
         # Add other messages
         for msg in canonical_request.messages:
-            msg_dict = {"role": msg.role, "content": msg.content}
+            # Handle content that may be ContentBlock list
+            content = msg.content
+            if isinstance(content, list):
+                # Extract text from ContentBlock objects
+                texts = []
+                for block in content:
+                    if hasattr(block, 'text') and block.text:
+                        texts.append(block.text)
+                    elif isinstance(block, dict) and block.get('text'):
+                        texts.append(block['text'])
+                content = "\n".join(texts)
+            msg_dict = {"role": msg.role, "content": content}
             if msg.name:
                 msg_dict["name"] = msg.name
             if msg.tool_call_id:
@@ -97,6 +136,8 @@ class OpenAIAdapter(BaseAdapter):
             body["tools"] = canonical_request.tools
         if canonical_request.tool_choice is not None:
             body["tool_choice"] = canonical_request.tool_choice
+        if canonical_request.stream:
+            body["stream"] = True
 
         # Build endpoint URL
         endpoint = f"{self.base_url}/chat/completions"
@@ -115,10 +156,20 @@ class OpenAIAdapter(BaseAdapter):
 
         content = ""
         finish_reason = None
+        tool_calls = None
 
         if choice and choice.message:
+            # Use content if available, otherwise fallback to reasoning
             content = choice.message.content or ""
+            if not content and hasattr(choice.message, 'reasoning') and choice.message.reasoning:
+                content = choice.message.reasoning
             finish_reason = choice.finish_reason
+            tool_calls = choice.message.tool_calls
+
+        # Build metadata with tool_calls if present
+        metadata = {}
+        if tool_calls:
+            metadata["tool_calls"] = tool_calls
 
         return CanonicalResponse(
             id=response.id,
@@ -128,20 +179,30 @@ class OpenAIAdapter(BaseAdapter):
             role="assistant",
             finish_reason=finish_reason,
             usage=response.usage.model_dump() if response.usage else None,
-            metadata={},
+            metadata=metadata,
         )
 
     def denormalize_response(
         self, canonical_response: CanonicalResponse, original_request: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Convert canonical response back to OpenAI format."""
+        # Build message
+        message = {
+            "role": canonical_response.role,
+            "content": canonical_response.content or "",
+        }
+
+        # Add tool_calls if present in metadata
+        tool_calls = canonical_response.metadata.get("tool_calls")
+        if tool_calls:
+            message["tool_calls"] = tool_calls
+
         # Build a proper OpenAI response structure
+        # Note: Always return content as string (standard OpenAI format)
+        # even if request used ContentBlock format
         choice = {
             "index": 0,
-            "message": {
-                "role": canonical_response.role,
-                "content": canonical_response.content,
-            },
+            "message": message,
             "finish_reason": canonical_response.finish_reason,
         }
 

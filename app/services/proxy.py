@@ -1,11 +1,14 @@
 """Core proxy service."""
 
+import logging
 import threading
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from app.adapters.anthropic_adapter import AnthropicAdapter
 from app.adapters.base import BaseAdapter
@@ -111,6 +114,11 @@ class ProxyService:
         trace_id = generate_trace_id()
         start_time = datetime.utcnow()
 
+        # Ensure raw_request is a plain dict from the start
+        # This prevents JSON serialization issues in error handling
+        if hasattr(raw_request, 'model_dump'):
+            raw_request = raw_request.model_dump(mode="json", exclude_none=True)
+
         # Get adapter
         adapter = self.get_adapter(provider)
         if not adapter:
@@ -118,6 +126,9 @@ class ProxyService:
 
         # Check if manual intercept is enabled
         use_intercept = not skip_intercept and is_intercept_mode_enabled()
+
+        canonical_request = None
+        model_str = raw_request.get("model", "unknown")
 
         try:
             # Normalize to canonical format
@@ -275,12 +286,14 @@ class ProxyService:
             return final_response, trace_id
 
         except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error: {e}")
             return await self._handle_error(
-                trace_id, provider, canonical_request.model, endpoint, method, start_time, e
+                trace_id, provider, canonical_request.model if canonical_request else model_str, endpoint, method, start_time, e, raw_request
             )
         except Exception as e:
+            logger.error(f"Unexpected error: {e}", exc_info=True)
             return await self._handle_error(
-                trace_id, provider, canonical_request.model, endpoint, method, start_time, e
+                trace_id, provider, canonical_request.model if canonical_request else model_str, endpoint, method, start_time, e, raw_request
             )
 
     async def replay_trace(
@@ -319,11 +332,16 @@ class ProxyService:
         method: str,
         start_time: datetime,
         error: Exception,
+        raw_request: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Dict[str, Any], str]:
         """Handle an error during proxy processing."""
         from app.schemas.traces import Trace, TraceError, TraceRequest
 
         end_time = datetime.utcnow()
+
+        # Ensure raw_request is JSON-serializable
+        if raw_request and hasattr(raw_request, 'model_dump'):
+            raw_request = raw_request.model_dump(mode="json", exclude_none=True)
 
         trace = Trace(
             trace_id=trace_id,
@@ -331,7 +349,7 @@ class ProxyService:
             model=model,
             endpoint=endpoint,
             method=method,
-            request=TraceRequest(raw={}, timestamp=start_time),
+            request=TraceRequest(raw=raw_request or {}, timestamp=start_time),
             response=None,
             start_time=start_time,
             end_time=end_time,

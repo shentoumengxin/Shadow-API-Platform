@@ -63,6 +63,30 @@ class Trace(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert trace to dictionary for JSON serialization."""
+        import json
+
+        def safe_serialize(obj):
+            """Safely serialize an object to JSON-serializable format."""
+            if obj is None:
+                return None
+            try:
+                # Try normal dict conversion
+                if isinstance(obj, dict):
+                    return {k: safe_serialize(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [safe_serialize(item) for item in obj]
+                elif hasattr(obj, 'model_dump'):
+                    return obj.model_dump(mode="json", exclude_none=True)
+                elif hasattr(obj, 'dict'):
+                    return obj.dict()
+                elif hasattr(obj, '__dict__'):
+                    return {k: safe_serialize(v) for k, v in obj.__dict__.items()}
+                else:
+                    return obj
+            except Exception as e:
+                # If serialization fails, return string representation
+                return str(obj)
+
         return {
             "trace_id": self.trace_id,
             "provider": self.provider,
@@ -70,17 +94,15 @@ class Trace(BaseModel):
             "endpoint": self.endpoint,
             "method": self.method,
             "request": {
-                "raw": self.request.raw,
-                "modified": self.request.modified,
-                "rule_results": self.request.rule_results.to_dict()
-                if self.request.rule_results
-                else None,
+                "raw": safe_serialize(self.request.raw),
+                "modified": safe_serialize(self.request.modified),
+                "rule_results": safe_serialize(self.request.rule_results),
                 "timestamp": self.request.timestamp.isoformat(),
             },
             "response": {
-                "raw": self.response.raw if self.response else None,
-                "modified": self.response.modified if self.response else None,
-                "rule_results": self.response.rule_results.to_dict()
+                "raw": safe_serialize(self.response.raw) if self.response else None,
+                "modified": safe_serialize(self.response.modified) if self.response else None,
+                "rule_results": safe_serialize(self.response.rule_results)
                 if self.response and self.response.rule_results
                 else None,
                 "timestamp": self.response.timestamp.isoformat() if self.response else None,
@@ -88,8 +110,8 @@ class Trace(BaseModel):
             "start_time": self.start_time.isoformat(),
             "end_time": self.end_time.isoformat() if self.end_time else None,
             "duration_ms": self.duration_ms,
-            "error": self.error.dict() if self.error else None,
-            "metadata": self.metadata,
+            "error": safe_serialize(self.error) if self.error else None,
+            "metadata": safe_serialize(self.metadata),
             "tags": self.tags,
         }
 

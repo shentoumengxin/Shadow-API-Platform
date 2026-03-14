@@ -56,6 +56,11 @@ start_service() {
     cd "$SCRIPT_DIR"
     print_status "Starting LLM Research Proxy on port $PORT..."
 
+    # Load environment variables from .env file
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        export $(grep -v '^#' "$SCRIPT_DIR/.env" | xargs)
+    fi
+
     # Check if clash proxy is available
     if curl -s -o /dev/null -w "" -x http://127.0.0.1:7890 --connect-timeout 2 https://openrouter.ai 2>/dev/null; then
         print_success "Clash proxy detected, using proxy for upstream requests"

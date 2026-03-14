@@ -24,10 +24,12 @@ class Message(BaseModel):
     """A chat message."""
 
     role: Literal["system", "user", "assistant", "tool"]
-    content: Union[str, List[ContentBlock]]
+    content: Optional[Union[str, List[ContentBlock]]] = None
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
     tool_calls: Optional[List[Dict[str, Any]]] = None
+    reasoning: Optional[str] = None
+    refusal: Optional[str] = None
 
 
 class ToolDefinition(BaseModel):

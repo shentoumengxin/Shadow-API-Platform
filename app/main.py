@@ -11,7 +11,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 
 from app.config import Config
 from app.rules.engine import RuleEngine
@@ -123,7 +123,7 @@ async def openai_chat_completions(
     """OpenAI-compatible chat completions endpoint.
 
     This endpoint accepts OpenAI-format requests and forwards them
-    to the configured upstream provider.
+    to the configured upstream provider. Supports both streaming and non-streaming.
     """
     # Determine provider from model or use default
     model_str = request.model.lower()
@@ -139,10 +139,27 @@ async def openai_chat_completions(
             detail=f"Provider '{provider}' is not configured. Available: {list(proxy_service.adapters.keys())}",
         )
 
-    # Convert to dict for processing
-    raw_request = request.model_dump(mode="json")
+    # Convert to dict for processing - use mode="json" for proper serialization
+    raw_request = request.model_dump(mode="json", exclude_none=True)
 
-    # Process through proxy
+    logger.debug(f"Received request: model={request.model}, stream={request.stream}, messages={len(request.messages)}")
+
+    # Get user's API key from headers
+    user_api_key = authorization or x_api_key
+    if user_api_key and user_api_key.startswith("Bearer "):
+        user_api_key = user_api_key[7:]  # Remove "Bearer " prefix
+
+    # If user provided a placeholder/invalid key (like "zzh-key"), treat as empty
+    # Valid OpenRouter keys start with "sk-or-", valid OpenAI keys start with "sk-"
+    if user_api_key and not (user_api_key.startswith("sk-") or len(user_api_key) > 30):
+        logger.debug(f"Ignoring invalid API key format: {user_api_key[:10]}...")
+        user_api_key = None
+
+    # Handle streaming requests
+    if request.stream:
+        return await _handle_streaming_request(provider, raw_request, user_api_key, "/v1/chat/completions")
+
+    # Process through proxy (non-streaming)
     try:
         response, trace_id = await proxy_service.process_request(
             provider=provider,
@@ -161,6 +178,358 @@ async def openai_chat_completions(
     except Exception as e:
         logger.error(f"Error processing OpenAI-compatible request: {e}")
         raise HTTPException(status_code=502, detail=str(e))
+
+
+async def _handle_streaming_request(
+    provider: str,
+    raw_request: Dict[str, Any],
+    user_api_key: Optional[str] = None,
+    endpoint: str = "/v1/chat/completions",
+    skip_intercept: bool = False,
+):
+    """Handle streaming request with intercept and trace support."""
+    from datetime import datetime
+    from app.services.intercept import intercept_store, wait_for_session_action
+    from app.utils.ids import generate_trace_id
+    from app.schemas.traces import Trace, TraceRequest, TraceResponse, TraceError
+
+    adapter = proxy_service.adapters.get(provider)
+    if not adapter:
+        raise HTTPException(status_code=400, detail=f"Provider '{provider}' not available")
+
+    trace_id = generate_trace_id()
+    start_time = datetime.utcnow()
+
+    # Normalize to canonical for rule processing
+    try:
+        canonical_request = adapter.normalize_to_canonical(raw_request)
+        # Re-denormalize to get proper provider format (handles ContentBlock conversion)
+        _, final_request_data, _ = adapter.denormalize_from_canonical(canonical_request)
+    except Exception as e:
+        logger.error(f"Failed to normalize request: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid request format: {e}")
+
+    # Apply request rules
+    try:
+        modified_request, request_rule_results = proxy_service.rule_engine.process_request(
+            canonical_request, raw_request
+        )
+    except Exception as e:
+        logger.error(f"Rule processing error: {e}")
+        modified_request = canonical_request
+        request_rule_results = None
+
+    # Create trace request record
+    trace_req = TraceRequest(
+        raw=raw_request,
+        modified=modified_request.model_dump(exclude_none=True) if modified_request else None,
+        rule_results=request_rule_results,
+        timestamp=start_time,
+    )
+
+    # Create initial trace
+    trace = Trace(
+        trace_id=trace_id,
+        provider=provider,
+        model=modified_request.model if modified_request else raw_request.get("model", "unknown"),
+        endpoint=endpoint,
+        method="POST",
+        request=trace_req,
+        start_time=start_time,
+        metadata={"stream": True, "intercepted": False},
+    )
+
+    # Check if intercept mode is enabled
+    from app.services.proxy import is_intercept_mode_enabled
+    use_intercept = not skip_intercept and is_intercept_mode_enabled()
+
+    if use_intercept:
+        # Create intercept session
+        session = intercept_store.create_session(
+            request_data=modified_request.model_dump(exclude_none=True),
+            endpoint=endpoint,
+            method="POST",
+        )
+
+        # Save trace with pending status
+        proxy_service.trace_store.save_trace(trace)
+
+        # Wait for user action
+        status = await wait_for_session_action(session.session_id, timeout=300)
+
+        if status == "dropped":
+            trace.end_time = datetime.utcnow()
+            trace.duration_ms = int((trace.end_time - start_time).total_seconds() * 1000)
+            trace.error = TraceError(type="Intercepted", message="Request dropped by user")
+            proxy_service.trace_store.save_trace(trace)
+            return JSONResponse(
+                content={"error": {"message": "Request dropped in intercept mode"}},
+                status_code=403,
+            )
+
+        # Get potentially modified request
+        updated_session = intercept_store.get_session(session.session_id)
+        if updated_session and updated_session.modified_request:
+            final_request_data = updated_session.modified_request
+        else:
+            # Re-denormalize modified request for upstream
+            _, final_request_data, _ = adapter.denormalize_from_canonical(modified_request)
+
+        trace.metadata["intercepted"] = True
+    else:
+        # Re-denormalize modified request for upstream
+        if modified_request:
+            _, final_request_data, _ = adapter.denormalize_from_canonical(modified_request)
+        else:
+            final_request_data = raw_request
+
+    # Use user's API key if provided, otherwise fall back to adapter's API key
+    if user_api_key and user_api_key.strip():
+        auth_token = user_api_key
+    else:
+        auth_token = adapter.api_key
+
+    if not auth_token:
+        raise HTTPException(status_code=400, detail="No API key available")
+
+    # Prepare upstream request
+    base_url = adapter.base_url
+    upstream_endpoint = f"{base_url}/chat/completions"
+
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json",
+    }
+
+    # Collect response chunks for trace and response interception
+    response_chunks = []
+    trace_saved = False
+
+    async def collect_upstream_response():
+        """Collect complete upstream response for potential interception."""
+        chunks = []
+        line_count = 0
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            async with client.stream("POST", upstream_endpoint, headers=headers, json=final_request_data) as response:
+                logger.info(f"Upstream response status: {response.status_code}, content-type: {response.headers.get('content-type')}")
+                if response.status_code != 200:
+                    error_body = await response.aread()
+                    error_chunk = {"error": {"message": error_body.decode(), "type": "api_error"}}
+                    chunks.append(error_chunk)
+                    return chunks, True  # True indicates error
+
+                content_type = response.headers.get('content-type', '')
+                is_sse = 'text/event-stream' in content_type or 'event-stream' in content_type
+
+                if is_sse:
+                    # SSE format - process line by line
+                    buffer = ""
+                    async for text in response.aiter_text():
+                        buffer += text
+                        # Process complete lines from buffer
+                        while "\n" in buffer:
+                            idx = buffer.index("\n")
+                            line = buffer[:idx].rstrip("\r")  # Handle \r\n
+                            buffer = buffer[idx + 1:]
+                            line_count += 1
+
+                            if line.startswith("data: "):
+                                data = line[6:]  # Remove "data: " prefix
+                                if data == "[DONE]":
+                                    chunks.append({"done": True})
+                                    break
+                                try:
+                                    chunk = json.loads(data)
+                                    chunks.append(chunk)
+                                except json.JSONDecodeError:
+                                    chunks.append({"raw": data})
+                            elif line.strip() == "":
+                                continue  # Skip empty lines
+                            else:
+                                logger.debug(f"Unexpected line in stream: {line[:100]}")
+
+                    # Process any remaining content in buffer
+                    if buffer.strip():
+                        line = buffer.strip()
+                        if line.startswith("data: "):
+                            data = line[6:]
+                            if data != "[DONE]":
+                                try:
+                                    chunk = json.loads(data)
+                                    chunks.append(chunk)
+                                except json.JSONDecodeError:
+                                    chunks.append({"raw": data})
+                else:
+                    # Non-SSE response (e.g., JSON response for non-streaming)
+                    body = await response.aread()
+                    try:
+                        data = json.loads(body.decode('utf-8'))
+                        # Check if it's a chat completion response
+                        if "choices" in data:
+                            chunks.append(data)
+                        else:
+                            chunks.append({"raw": data})
+                    except json.JSONDecodeError:
+                        chunks.append({"raw": body.decode('utf-8')})
+
+        logger.info(f"Collected {len(chunks)} chunks from {line_count} lines (is_sse={is_sse})")
+        return chunks, False
+
+    try:
+        # Collect the complete response first (needed for interception)
+        response_chunks, is_error = await collect_upstream_response()
+    except Exception as e:
+        logger.error(f"Failed to collect upstream response: {e}", exc_info=True)
+        end_time = datetime.utcnow()
+        trace.error = TraceError(type="CollectionError", message=str(e))
+        trace.end_time = end_time
+        trace.duration_ms = int((end_time - start_time).total_seconds() * 1000)
+        proxy_service.trace_store.save_trace(trace)
+        return JSONResponse(
+            content={"error": {"message": f"Failed to collect response: {e}"}},
+            status_code=502,
+            headers={"X-Research-Trace-Id": trace_id},
+        )
+
+    # Handle error response
+    if is_error:
+        end_time = datetime.utcnow()
+        error_chunk = response_chunks[0] if response_chunks else {"error": {"message": "Unknown error", "type": "api_error"}}
+        trace.error = TraceError(
+            type="APIError",
+            message=error_chunk.get("error", {}).get("message", "Unknown error"),
+        )
+        trace.end_time = end_time
+        trace.duration_ms = int((end_time - start_time).total_seconds() * 1000)
+        proxy_service.trace_store.save_trace(trace)
+        trace_saved = True
+        return JSONResponse(
+            content=error_chunk,
+            status_code=502,
+            headers={"X-Research-Trace-Id": trace_id},
+        )
+
+    # Check if we need to intercept the response
+    if use_intercept:
+        # Store upstream response in session for interception
+        intercept_store.set_upstream_response(
+            session.session_id,
+            {"chunks": response_chunks},
+        )
+
+        # Wait for user action on response
+        status = await wait_for_session_action(session.session_id, timeout=300)
+
+        if status == "dropped":
+            end_time = datetime.utcnow()
+            trace.end_time = end_time
+            trace.duration_ms = int((end_time - start_time).total_seconds() * 1000)
+            trace.error = TraceError(type="Intercepted", message="Response dropped by user")
+            proxy_service.trace_store.save_trace(trace)
+            trace_saved = True
+            intercept_store.mark_response_sent(session.session_id)
+            return JSONResponse(
+                content={"error": {"message": "Response dropped in intercept mode"}},
+                status_code=403,
+                headers={"X-Research-Trace-Id": trace_id},
+            )
+
+        # Get potentially modified response
+        updated_session = intercept_store.get_session(session.session_id)
+        if updated_session and updated_session.modified_response:
+            # User modified the response
+            modified_chunks = updated_session.modified_response.get("chunks", response_chunks)
+            response_chunks = modified_chunks
+
+        intercept_store.mark_response_sent(session.session_id)
+
+    async def stream_generator():
+        """Generate SSE stream from collected chunks."""
+        nonlocal trace_saved
+        try:
+            for chunk in response_chunks:
+                if chunk.get("done"):
+                    yield "data: [DONE]\n\n"
+                    break
+                elif "raw" in chunk:
+                    yield f"data: {chunk['raw']}\n\n"
+                else:
+                    yield f"data: {json.dumps(chunk)}\n\n"
+        except Exception as e:
+            logger.error(f"Error in stream generator: {e}")
+            raise
+        finally:
+            # Ensure trace is saved even if client disconnects
+            if not trace_saved:
+                try:
+                    end_time = datetime.utcnow()
+                    duration_ms = int((end_time - start_time).total_seconds() * 1000)
+
+                    # Build final content from chunks (handles multiple formats)
+                    final_content = ""
+                    reasoning_content = ""
+                    for chunk in response_chunks:
+                        if not isinstance(chunk, dict):
+                            continue
+                        # OpenAI streaming format: choices[].delta.content
+                        if "choices" in chunk and isinstance(chunk["choices"], list):
+                            for choice in chunk["choices"]:
+                                if not isinstance(choice, dict):
+                                    continue
+                                delta = choice.get("delta", {})
+                                # Extract content
+                                if "content" in delta and delta["content"]:
+                                    final_content += delta["content"]
+                                # Extract reasoning (for models like o1, deepseek-r1)
+                                if "reasoning" in delta and delta["reasoning"]:
+                                    reasoning_content += delta["reasoning"]
+                                # Extract reasoning_content (OpenAI reasoning models)
+                                if "reasoning_content" in delta and delta["reasoning_content"]:
+                                    reasoning_content += delta["reasoning_content"]
+                        # Anthropic streaming format: type=content_block_delta
+                        elif chunk.get("type") == "content_block_delta":
+                            delta = chunk.get("delta", {})
+                            if delta and "text" in delta:
+                                final_content += delta["text"]
+                        # Non-streaming format: choices[].message.content
+                        elif "choices" in chunk and isinstance(chunk["choices"], list):
+                            for choice in chunk["choices"]:
+                                if not isinstance(choice, dict):
+                                    continue
+                                message = choice.get("message", {})
+                                if message and "content" in message:
+                                    final_content += message["content"]
+
+                    # Combine content with reasoning if present
+                    combined_content = final_content
+                    if reasoning_content:
+                        combined_content = f"[Reasoning]\n{reasoning_content}\n\n[Response]\n{final_content}"
+
+                    # Create trace response
+                    trace_resp = TraceResponse(
+                        raw={"chunks": response_chunks},
+                        modified={"content": combined_content, "reasoning": reasoning_content if reasoning_content else None},
+                        timestamp=end_time,
+                    )
+
+                    trace.response = trace_resp
+                    trace.end_time = end_time
+                    trace.duration_ms = duration_ms
+                    proxy_service.trace_store.save_trace(trace)
+                    trace_saved = True
+                except Exception as e:
+                    logger.error(f"Failed to save trace: {e}")
+
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Research-Trace-Id": trace_id,
+            "X-Proxy-Lab": "true",
+        },
+    )
 
 
 # =============================================
