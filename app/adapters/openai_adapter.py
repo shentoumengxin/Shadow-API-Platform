@@ -19,12 +19,44 @@ class OpenAIAdapter(BaseAdapter):
 
     Supports:
     - OpenAI API
+    - OpenRouter API
     - Any OpenAI-compatible endpoint (vLLM, LocalAI, etc.)
     """
+
+    def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1"):
+        """Initialize adapter with API key and base URL.
+
+        Args:
+            api_key: API key for authentication
+            base_url: Base URL for the API endpoint
+        """
+        super().__init__(api_key, base_url)
+        # Detect if this is OpenRouter
+        self.is_openrouter = "openrouter" in base_url.lower()
 
     def get_provider_name(self) -> str:
         """Return provider name."""
         return "openai"
+
+    def get_default_headers(self) -> Dict[str, str]:
+        """Get default headers for API requests.
+
+        For OpenRouter, adds required identification headers.
+        """
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        if self.is_openrouter:
+            # OpenRouter uses different auth header
+            headers["Authorization"] = f"Bearer {self.api_key}"
+            # OpenRouter requires these headers for ranking
+            headers["HTTP-Referer"] = "https://github.com/llm-research-proxy"
+            headers["X-Title"] = "LLM Research Proxy"
+        else:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        return headers
 
     def normalize_to_canonical(self, raw_request: Dict[str, Any]) -> CanonicalRequest:
         """Convert OpenAI request to canonical format."""

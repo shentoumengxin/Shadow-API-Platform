@@ -309,71 +309,124 @@ async def _handle_streaming_request(
         """Collect complete upstream response for potential interception."""
         chunks = []
         line_count = 0
-        async with httpx.AsyncClient(timeout=300.0) as client:
-            async with client.stream("POST", upstream_endpoint, headers=headers, json=final_request_data) as response:
-                logger.info(f"Upstream response status: {response.status_code}, content-type: {response.headers.get('content-type')}")
-                if response.status_code != 200:
-                    error_body = await response.aread()
-                    error_chunk = {"error": {"message": error_body.decode(), "type": "api_error"}}
-                    chunks.append(error_chunk)
-                    return chunks, True  # True indicates error
 
-                content_type = response.headers.get('content-type', '')
-                is_sse = 'text/event-stream' in content_type or 'event-stream' in content_type
+        # Get proxy from environment variables
+        http_proxy = os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy')
+        https_proxy = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
+        proxy_url = https_proxy or http_proxy
 
-                if is_sse:
-                    # SSE format - process line by line
-                    buffer = ""
-                    async for text in response.aiter_text():
-                        buffer += text
-                        # Process complete lines from buffer
-                        while "\n" in buffer:
-                            idx = buffer.index("\n")
-                            line = buffer[:idx].rstrip("\r")  # Handle \r\n
-                            buffer = buffer[idx + 1:]
-                            line_count += 1
+        if proxy_url:
+            logger.info(f"Using proxy: {proxy_url}")
 
+        # Configure client with HTTP/1.1 and proper timeouts
+        transport = httpx.AsyncHTTPTransport(
+            retries=2,  # Add retry at transport level
+            http1=True,  # Force HTTP/1.1
+            http2=False,  # Disable HTTP/2 for compatibility
+        )
+
+        client_kwargs = {
+            "timeout": 300.0,
+            "transport": transport,
+            "follow_redirects": True,
+        }
+
+        # Add proxy if configured
+        if proxy_url:
+            client_kwargs["proxy"] = proxy_url
+
+        async with httpx.AsyncClient(**client_kwargs) as client:
+            try:
+                async with client.stream("POST", upstream_endpoint, headers=headers, json=final_request_data) as response:
+                    logger.info(f"Upstream response status: {response.status_code}, content-type: {response.headers.get('content-type')}")
+                    if response.status_code != 200:
+                        error_body = await response.aread()
+                        error_chunk = {"error": {"message": error_body.decode(), "type": "api_error"}}
+                        chunks.append(error_chunk)
+                        return chunks, True  # True indicates error
+
+                    content_type = response.headers.get('content-type', '')
+                    is_sse = 'text/event-stream' in content_type or 'event-stream' in content_type
+
+                    if is_sse:
+                        # SSE format - process line by line
+                        buffer = ""
+                        async for text in response.aiter_text():
+                            buffer += text
+                            # Process complete lines from buffer
+                            while "\n" in buffer:
+                                idx = buffer.index("\n")
+                                line = buffer[:idx].rstrip("\r")  # Handle \r\n
+                                buffer = buffer[idx + 1:]
+                                line_count += 1
+
+                                if line.startswith("data: "):
+                                    data = line[6:]  # Remove "data: " prefix
+                                    if data == "[DONE]":
+                                        chunks.append({"done": True})
+                                        break
+                                    try:
+                                        chunk = json.loads(data)
+                                        chunks.append(chunk)
+                                    except json.JSONDecodeError:
+                                        chunks.append({"raw": data})
+                                elif line.strip() == "":
+                                    continue  # Skip empty lines
+                                else:
+                                    logger.debug(f"Unexpected line in stream: {line[:100]}")
+
+                        # Process any remaining content in buffer
+                        if buffer.strip():
+                            line = buffer.strip()
                             if line.startswith("data: "):
-                                data = line[6:]  # Remove "data: " prefix
-                                if data == "[DONE]":
-                                    chunks.append({"done": True})
-                                    break
-                                try:
-                                    chunk = json.loads(data)
-                                    chunks.append(chunk)
-                                except json.JSONDecodeError:
-                                    chunks.append({"raw": data})
-                            elif line.strip() == "":
-                                continue  # Skip empty lines
+                                data = line[6:]
+                                if data != "[DONE]":
+                                    try:
+                                        chunk = json.loads(data)
+                                        chunks.append(chunk)
+                                    except json.JSONDecodeError:
+                                        chunks.append({"raw": data})
+                    else:
+                        # Non-SSE response (e.g., JSON response for non-streaming)
+                        body = await response.aread()
+                        try:
+                            data = json.loads(body.decode('utf-8'))
+                            # Check if it's a chat completion response
+                            if "choices" in data:
+                                chunks.append(data)
                             else:
-                                logger.debug(f"Unexpected line in stream: {line[:100]}")
+                                chunks.append({"raw": data})
+                        except json.JSONDecodeError:
+                            chunks.append({"raw": body.decode('utf-8')})
 
-                    # Process any remaining content in buffer
-                    if buffer.strip():
-                        line = buffer.strip()
-                        if line.startswith("data: "):
-                            data = line[6:]
-                            if data != "[DONE]":
-                                try:
-                                    chunk = json.loads(data)
-                                    chunks.append(chunk)
-                                except json.JSONDecodeError:
-                                    chunks.append({"raw": data})
-                else:
-                    # Non-SSE response (e.g., JSON response for non-streaming)
-                    body = await response.aread()
-                    try:
-                        data = json.loads(body.decode('utf-8'))
-                        # Check if it's a chat completion response
+                logger.info(f"Collected {len(chunks)} chunks from {line_count} lines (is_sse={is_sse})")
+                return chunks, False
+
+            except httpx.RemoteProtocolError as e:
+                logger.error(f"Remote protocol error: {e}")
+                # Try fallback: regular POST request
+                try:
+                    logger.info("Attempting fallback to regular POST request")
+                    response = await client.post(upstream_endpoint, headers=headers, json=final_request_data)
+                    logger.info(f"Fallback response status: {response.status_code}")
+                    if response.status_code == 200:
+                        data = response.json()
                         if "choices" in data:
                             chunks.append(data)
                         else:
                             chunks.append({"raw": data})
-                    except json.JSONDecodeError:
-                        chunks.append({"raw": body.decode('utf-8')})
-
-        logger.info(f"Collected {len(chunks)} chunks from {line_count} lines (is_sse={is_sse})")
-        return chunks, False
+                        return chunks, False
+                    else:
+                        chunks.append({"error": {"message": response.text, "type": "api_error", "status": response.status_code}})
+                        return chunks, True
+                except Exception as fallback_error:
+                    logger.error(f"Fallback also failed: {fallback_error}")
+                    chunks.append({"error": {"message": str(e), "type": "connection_error"}})
+                    return chunks, True
+            except Exception as e:
+                logger.error(f"Unexpected error in collect_upstream_response: {e}")
+                chunks.append({"error": {"message": str(e), "type": "unknown_error"}})
+                return chunks, True
 
     try:
         # Collect the complete response first (needed for interception)
@@ -975,12 +1028,6 @@ async def clear_intercepts():
     """Clear all intercept sessions."""
     count = intercept_store.clear_all()
     return {"success": True, "message": f"Cleared {count} sessions"}
-
-
-@app.get("/intercept/stats")
-async def intercept_stats():
-    """Get intercept statistics."""
-    return intercept_store.get_stats()
 
 
 # =============================================

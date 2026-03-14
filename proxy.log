@@ -1,55 +1,324 @@
-INFO:     Started server process [2820701]
+INFO:     Started server process [2827540]
 INFO:     Waiting for application startup.
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - ==================================================
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - LLM Research Proxy starting...
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - Host: 0.0.0.0:8765
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - Trace enabled: True
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - Dry run: False
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - Rules directory: rules
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - Providers configured: ['openai']
-2026-03-14 08:14:40,418 - llm_research_proxy - INFO - ==================================================
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - ==================================================
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - LLM Research Proxy starting...
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - Host: 0.0.0.0:8765
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - Trace enabled: True
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - Dry run: False
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - Rules directory: rules
+2026-03-14 10:07:53,970 - llm_research_proxy - INFO - Providers configured: ['openai']
+2026-03-14 10:07:53,971 - llm_research_proxy - INFO - ==================================================
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8765 (Press CTRL+C to quit)
-INFO:     10.33.101.25:62870 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:57058 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:61240 - "GET /intercept/intercept_a20f7a84b1fe HTTP/1.1" 404 Not Found
-INFO:     10.33.101.25:58756 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:60541 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:63512 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:53947 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
-2026-03-14 08:18:03,537 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
-INFO:     10.33.101.25:58505 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:58505 - "GET /ui HTTP/1.1" 200 OK
-INFO:     10.33.101.25:58505 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:49311 - "GET /traces?limit=20 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:53875 - "GET /rules HTTP/1.1" 200 OK
-INFO:     10.33.101.25:53875 - "GET /traces?limit=20 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:58021 - "GET /traces?limit=20 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:58021 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
-2026-03-14 08:18:20,726 - llm_research_proxy - INFO - Collected 641 chunks from 1317 lines (is_sse=True)
-INFO:     10.33.101.25:60238 - "POST /v1/chat/completions HTTP/1.1" 200 OK
-2026-03-14 08:18:21,815 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
-2026-03-14 08:18:35,503 - llm_research_proxy - INFO - Collected 24 chunks from 111 lines (is_sse=True)
-INFO:     10.33.101.25:51966 - "POST /v1/chat/completions HTTP/1.1" 200 OK
-2026-03-14 08:18:36,636 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
-INFO:     10.33.101.25:59320 - "GET /health HTTP/1.1" 200 OK
-2026-03-14 08:18:53,854 - llm_research_proxy - INFO - Collected 235 chunks from 525 lines (is_sse=True)
-INFO:     10.33.101.25:64443 - "POST /v1/chat/completions HTTP/1.1" 200 OK
-2026-03-14 08:18:55,027 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
-INFO:     10.33.101.25:54273 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:54273 - "GET /traces?limit=20 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:54273 - "GET /traces/tr_20260314121835_7b41e571 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:62072 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
-2026-03-14 08:19:18,953 - llm_research_proxy - INFO - Collected 810 chunks from 1669 lines (is_sse=True)
-INFO:     10.33.101.25:64443 - "POST /v1/chat/completions HTTP/1.1" 200 OK
-2026-03-14 08:19:20,231 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
-2026-03-14 08:19:25,971 - llm_research_proxy - INFO - Collected 160 chunks from 339 lines (is_sse=True)
-INFO:     10.33.101.25:58677 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64479 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64479 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55002 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61825 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61825 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61825 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64197 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64197 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61696 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:65525 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64638 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64638 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+2026-03-14 10:10:17,901 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+2026-03-14 10:10:18,869 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
+2026-03-14 10:10:25,612 - llm_research_proxy - INFO - Collected 160 chunks from 343 lines (is_sse=True)
+INFO:     10.33.101.25:64639 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-03-14 10:10:25,656 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+2026-03-14 10:10:28,738 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
 INFO:     10.33.101.25:49669 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:49669 - "GET /traces/tr_20260314121820_f88aafc9 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:49669 - "GET /traces/tr_20260314121835_7b41e571 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:49669 - "GET /traces/tr_20260314121820_f88aafc9 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:57862 - "GET /traces/tr_20260314121835_7b41e571 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:62490 - "GET /health HTTP/1.1" 200 OK
-INFO:     10.33.101.25:50079 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
-INFO:     10.33.101.25:52594 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49669 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+2026-03-14 10:10:49,771 - llm_research_proxy - INFO - Collected 390 chunks from 855 lines (is_sse=True)
+INFO:     10.33.101.25:59815 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+2026-03-14 10:10:49,896 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+INFO:     10.33.101.25:49669 - "GET /traces/tr_20260314141017_a3a14981 HTTP/1.1" 200 OK
+2026-03-14 10:10:50,846 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
+INFO:     10.33.101.25:49671 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49671 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+2026-03-14 10:10:59,625 - llm_research_proxy - INFO - Collected 160 chunks from 353 lines (is_sse=True)
+INFO:     10.33.101.25:50623 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51680 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51680 - "GET /traces/tr_20260314141049_13040d3b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61099 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61099 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:61099 - "GET /traces/tr_20260314141049_13040d3b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:50807 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53190 - "GET /traces/tr_20260314141049_13040d3b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:64532 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:54905 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:54905 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52988 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:65533 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:65533 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:65533 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:65533 - "GET /traces/tr_20260314141049_13040d3b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:56229 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58587 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58587 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58587 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58587 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58587 - "GET /traces/tr_20260314141017_a3a14981 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58587 - "GET /traces/tr_20260314141049_13040d3b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58257 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58257 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58257 - "GET /traces/tr_20260314141049_13040d3b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58257 - "GET /traces/tr_20260314141025_f1a4c54a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58257 - "GET /traces/tr_20260314141017_a3a14981 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62254 - "GET /ui HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62254 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:56766 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62429 - "GET /rules HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62429 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62429 - "GET /intercept/ui HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62429 - "GET /intercept/mode HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "POST /intercept/mode/enable HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept/mode HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52759 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55848 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "POST /intercept/intercept_521daa362ae5/modify-request HTTP/1.1" 200 OK
+2026-03-14 10:14:47,257 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+2026-03-14 10:14:47,866 - llm_research_proxy - INFO - Upstream response status: 400, content-type: application/json
+INFO:     10.33.101.25:57854 - "POST /v1/chat/completions HTTP/1.1" 502 Bad Gateway
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "POST /intercept/intercept_1f9de9967b3a/forward HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+2026-03-14 10:14:54,351 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+2026-03-14 10:14:56,456 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+2026-03-14 10:15:03,879 - llm_research_proxy - INFO - Collected 23 chunks from 81 lines (is_sse=True)
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "POST /intercept/intercept_1f9de9967b3a/forward HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57854 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57245 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:58760 - "POST /intercept/intercept_90e7368b4d8b/forward HTTP/1.1" 200 OK
+2026-03-14 10:15:22,957 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+2026-03-14 10:15:23,947 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
+INFO:     10.33.101.25:58760 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+2026-03-14 10:15:26,212 - llm_research_proxy - INFO - Collected 161 chunks from 325 lines (is_sse=True)
+INFO:     10.33.101.25:51459 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:59841 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:59841 - "POST /intercept/intercept_90e7368b4d8b/forward HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57854 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     10.33.101.25:59841 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:59841 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "POST /intercept/intercept_9095897223ab/forward HTTP/1.1" 200 OK
+2026-03-14 10:15:39,288 - llm_research_proxy - INFO - Using proxy: http://127.0.0.1:7890
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+2026-03-14 10:15:42,798 - llm_research_proxy - INFO - Upstream response status: 200, content-type: text/event-stream
+INFO:     10.33.101.25:51459 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51459 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+2026-03-14 10:15:51,130 - llm_research_proxy - INFO - Collected 160 chunks from 355 lines (is_sse=True)
+INFO:     10.33.101.25:53995 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "POST /intercept/intercept_9095897223ab/modify-response HTTP/1.1" 200 OK
+INFO:     10.33.101.25:59842 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62709 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53995 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51179 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:57274 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:62331 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /ui HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60163 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:53857 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /rules HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /ui HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49767 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:51827 - "GET /traces?limit=20 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /rules HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:55770 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept/intercept_521daa362ae5 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept/intercept_1f9de9967b3a HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept/intercept_90e7368b4d8b HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept/intercept_9095897223ab HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:52796 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:49709 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
+INFO:     10.33.101.25:60967 - "GET /intercept?limit=50 HTTP/1.1" 200 OK
