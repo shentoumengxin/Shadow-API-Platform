@@ -269,10 +269,22 @@ async def _handle_streaming_request(
 
         # Get potentially modified request
         updated_session = intercept_store.get_session(session.session_id)
-        if updated_session and updated_session.modified_request:
-            final_request_data = updated_session.modified_request
+        logger.info(f"[Intercept] After wait_for_session_action, session status: {updated_session.status if updated_session else 'None'}")
+        logger.info(f"[Intercept] modified_request is None: {updated_session.modified_request is None if updated_session else 'N/A'}")
+        if updated_session and updated_session.modified_request is not None:
+            # User modified the request - need to denormalize from canonical format
+            # The stored modified_request is in canonical format, convert back to OpenAI format
+            from app.schemas.models import CanonicalRequest
+            try:
+                modified_canonical = CanonicalRequest(**updated_session.modified_request)
+                _, final_request_data, _ = adapter.denormalize_from_canonical(modified_canonical)
+                logger.info(f"[Intercept] Denormalized modified request for upstream")
+            except Exception as e:
+                logger.error(f"[Intercept] Failed to denormalize modified request: {e}, using as-is")
+                final_request_data = updated_session.modified_request
         else:
             # Re-denormalize modified request for upstream
+            logger.info(f"[Intercept] Using denormalized canonical request (no modified_request in store)")
             _, final_request_data, _ = adapter.denormalize_from_canonical(modified_request)
 
         trace.metadata["intercepted"] = True
@@ -454,6 +466,17 @@ async def _handle_streaming_request(
         )
         trace.end_time = end_time
         trace.duration_ms = int((end_time - start_time).total_seconds() * 1000)
+
+        # If intercept mode is enabled, store error response for interception
+        if use_intercept:
+            intercept_store.set_upstream_response(
+                session.session_id,
+                {"chunks": response_chunks, "is_error": True},
+            )
+            # Wait for user action on response
+            status = await wait_for_session_action(session.session_id, timeout=300)
+            intercept_store.mark_response_sent(session.session_id)
+
         proxy_service.trace_store.save_trace(trace)
         trace_saved = True
         return JSONResponse(
@@ -489,7 +512,7 @@ async def _handle_streaming_request(
 
         # Get potentially modified response
         updated_session = intercept_store.get_session(session.session_id)
-        if updated_session and updated_session.modified_response:
+        if updated_session and updated_session.modified_response is not None:
             # User modified the response
             modified_chunks = updated_session.modified_response.get("chunks", response_chunks)
             response_chunks = modified_chunks
@@ -508,6 +531,9 @@ async def _handle_streaming_request(
                     yield f"data: {chunk['raw']}\n\n"
                 else:
                     yield f"data: {json.dumps(chunk)}\n\n"
+            else:
+                # Ensure we always send [DONE] at the end of stream
+                yield "data: [DONE]\n\n"
         except Exception as e:
             logger.error(f"Error in stream generator: {e}")
             raise
@@ -954,11 +980,16 @@ async def get_intercept(session_id: str):
 @app.post("/intercept/{session_id}/modify-request")
 async def modify_intercept_request(session_id: str, data: InterceptModifyRequest):
     """Modify an intercepted request and optionally forward or drop."""
+    logger.info(f"[Intercept] Modify request for session {session_id}, action={data.action}")
+    logger.debug(f"[Intercept] Modified request data type: {type(data.modified_request)}, has content: {bool(data.modified_request) if data.modified_request is not None else False}")
+
     session = intercept_store.get_session(session_id)
     if not session:
+        logger.error(f"[Intercept] Session {session_id} not found")
         raise HTTPException(status_code=404, detail="Session not found")
 
     intercept_store.modify_request(session_id, data.modified_request)
+    logger.info(f"[Intercept] Session {session_id} modified_request set, new status: {session.status}")
 
     if data.action == "drop":
         intercept_store.drop_request(session_id)

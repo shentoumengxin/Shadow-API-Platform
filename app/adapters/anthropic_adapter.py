@@ -124,6 +124,8 @@ class AnthropicAdapter(BaseAdapter):
             body["tools"] = canonical_request.tools
         if canonical_request.tool_choice is not None:
             body["tool_choice"] = canonical_request.tool_choice
+        if canonical_request.stream:
+            body["stream"] = True
 
         # Build endpoint URL
         endpoint = f"{self.base_url}/v1/messages"

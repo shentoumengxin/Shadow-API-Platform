@@ -1,9 +1,10 @@
 """Schemas for manual intercept feature."""
 
+import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Optional, Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class InterceptSession(BaseModel):
@@ -46,15 +47,37 @@ class InterceptCreateRequest(BaseModel):
 class InterceptModifyRequest(BaseModel):
     """Request to modify an intercepted request."""
 
-    modified_request: Dict[str, Any]
+    modified_request: Union[Dict[str, Any], str]
     action: Literal["forward", "drop"] = "forward"
+
+    @field_validator('modified_request', mode='before')
+    @classmethod
+    def parse_modified_request(cls, v):
+        """Parse modified_request if it's a JSON string."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError("modified_request must be a valid JSON object or string")
+        return v
 
 
 class InterceptModifyResponse(BaseModel):
     """Request to modify an intercepted response."""
 
-    modified_response: Dict[str, Any]
+    modified_response: Union[Dict[str, Any], str]
     action: Literal["send", "drop"] = "send"
+
+    @field_validator('modified_response', mode='before')
+    @classmethod
+    def parse_modified_response(cls, v):
+        """Parse modified_response if it's a JSON string."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError("modified_response must be a valid JSON object or string")
+        return v
 
 
 class InterceptResponse(BaseModel):
